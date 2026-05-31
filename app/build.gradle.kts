@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.mdreader"
         minSdk = 26
         targetSdk = 35
-        versionCode = 34
-        versionName = "2.5.0"
+        versionCode = 35
+        versionName = "2.5.2"
     }
 
     buildTypes {

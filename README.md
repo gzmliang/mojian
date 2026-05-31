@@ -48,8 +48,8 @@
 
 ## 下载
 
-[📦 墨笺 v2.4.3 APK](https://github.com/gzmliang/mojian/releases/latest)
+[📦 最新 APK](https://github.com/gzmliang/mojian/releases/latest)
 
 ## 作者
 
-梁竞敏 (Jimmy) · 广东女子职业技术学院 信息技术学院
+[gzmliang](https://github.com/gzmliang)
