@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">墨笺</string>
+    <string name="app_name_en">InkNote</string>
+    <string name="open_file">打开文件</string>
+    <string name="toc">目录</string>
+    <string name="debug_log">调试日志</string>
+    <string name="theme_light">亮色</string>
+    <string name="theme_dark">暗色</string>
+    <string name="theme_sepia">护眼</string>
+    <string name="search_hint">搜索文档…</string>
+    <string name="search_no_results">无匹配</string>
+    <string name="bookmarks">书签</string>
+    <string name="recent_files">最近阅读</string>
+    <string name="no_recent">暂无阅读记录</string>
+    <string name="tts_play">开始朗读</string>
+    <string name="tts_stop">停止朗读</string>
+    <string name="font_size">字号</string>
+    <string name="page_up">上一页</string>
+    <string name="page_down">下一页</string>
+</resources>

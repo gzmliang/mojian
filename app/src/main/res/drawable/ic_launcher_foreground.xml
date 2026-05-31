@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 深色圆角底 -->
+    <path
+        android:fillColor="#1E1B4B"
+        android:pathData="M24,0 L84,0 Q100,0 104,4 L108,4 Q108,24 108,24 L108,84 Q108,100 104,104 L104,108 Q84,108 24,108 L4,108 Q0,104 0,100 L0,24 Q0,8 4,4 L4,0 Q24,0 24,0 Z"/>
+
+    <!-- 光晕 -->
+    <path
+        android:fillColor="#312E81"
+        android:fillAlpha="0.4"
+        android:pathData="M34,14 Q74,14 74,54 Q74,94 54,94 Q14,94 14,54 Q14,14 34,14 Z"/>
+
+    <!-- 打开的文档 — 左页 -->
+    <path
+        android:fillColor="#3730A3"
+        android:pathData="M25,32 L50,36 L50,82 L25,78 Z"/>
+
+    <!-- 打开的文档 — 右页 -->
+    <path
+        android:fillColor="#312E81"
+        android:pathData="M83,32 L58,36 L58,82 L83,78 Z"/>
+
+    <!-- 中央折线（书脊） -->
+    <path android:fillColor="#00000000" android:strokeColor="#6366F1" android:strokeWidth="1"
+        android:pathData="M54,36 L54,82"/>
+
+    <!-- 左页内容 — 标题线 -->
+    <path android:fillColor="#00000000" android:strokeColor="#A5B4FC" android:strokeWidth="2.5" android:strokeLineCap="round"
+        android:pathData="M30,44 L48,46"/>
+    <!-- 左页 — 正文线1 -->
+    <path android:fillColor="#00000000" android:strokeColor="#818CF8" android:strokeWidth="1.5" android:strokeLineCap="round"
+        android:pathData="M30,52 L46,53" android:strokeAlpha="0.7"/>
+    <!-- 左页 — 正文线2 -->
+    <path android:fillColor="#00000000" android:strokeColor="#818CF8" android:strokeWidth="1.5" android:strokeLineCap="round"
+        android:pathData="M30,58 L50,59" android:strokeAlpha="0.7"/>
+    <!-- 左页 — 正文线3 -->
+    <path android:fillColor="#00000000" android:strokeColor="#6366F1" android:strokeWidth="1.5" android:strokeLineCap="round"
+        android:pathData="M30,64 L42,65" android:strokeAlpha="0.5"/>
+
+    <!-- 右页 — 标题线 -->
+    <path android:fillColor="#00000000" android:strokeColor="#C4B5FD" android:strokeWidth="2.5" android:strokeLineCap="round"
+        android:pathData="M62,46 L78,44"/>
+    <!-- 右页 — 代码块 -->
+    <path android:fillColor="#4C1D95" android:fillAlpha="0.3" android:strokeColor="#00000000"
+        android:pathData="M62,50 L78,50 L78,62 L62,62 Z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#A78BFA" android:strokeWidth="1" android:strokeLineCap="round"
+        android:pathData="M64,54 L72,54" android:strokeAlpha="0.6"/>
+    <path android:fillColor="#00000000" android:strokeColor="#A78BFA" android:strokeWidth="1" android:strokeLineCap="round"
+        android:pathData="M64,57 L68,57" android:strokeAlpha="0.6"/>
+
+    <!-- 顶部悬浮的 # 标记 — 核心识别符号 -->
+    <group android:translateX="2" android:translateY="-2">
+        <!-- # 竖线1 -->
+        <path android:fillColor="#00000000" android:strokeColor="#A78BFA" android:strokeWidth="3.5" android:strokeLineCap="round"
+            android:pathData="M41,20 L41,34"/>
+        <!-- # 竖线2 -->
+        <path android:fillColor="#00000000" android:strokeColor="#818CF8" android:strokeWidth="3.5" android:strokeLineCap="round"
+            android:pathData="M52,20 L52,34"/>
+        <!-- # 上横线 -->
+        <path android:fillColor="#00000000" android:strokeColor="#A78BFA" android:strokeWidth="3.5" android:strokeLineCap="round"
+            android:pathData="M36,23 L57,23"/>
+        <!-- # 下横线 -->
+        <path android:fillColor="#00000000" android:strokeColor="#818CF8" android:strokeWidth="3.5" android:strokeLineCap="round"
+            android:pathData="M36,29 L57,29"/>
+    </group>
+
+    <!-- M 字母（Markdown 的 M）— 在 # 上方 -->
+    <path android:fillColor="#00000000" android:strokeColor="#DDD6FE" android:strokeWidth="2.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M62,17 L66,27 L70,17 L74,27 L78,17"/>
+
+    <!-- 底部发光圆点装饰 -->
+    <path android:fillColor="#7C3AED" android:fillAlpha="0.5"
+        android:pathData="M46,90 Q48,88 50,90 Q48,92 46,90 Z"/>
+    <path android:fillColor="#6366F1" android:fillAlpha="0.3"
+        android:pathData="M40,92 Q42,89 44,92 Q42,94 40,92 Z"/>
+    <path android:fillColor="#818CF8" android:fillAlpha="0.2"
+        android:pathData="M52,91 Q53,90 55,91 Q53,93 52,91 Z"/>
+</vector>

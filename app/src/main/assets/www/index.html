@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
+    <title>墨笺</title>
+
+    <!-- Markdown 渲染 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Mermaid -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #1a1a1a;
+            --text-secondary: #666;
+            --border: #e0e0e0;
+            --code-bg: #f5f5f5;
+            --blockquote-bg: #f0f4ff;
+            --blockquote-border: #1A73E8;
+            --blockquote-text: #444;
+            --table-th-bg: #f5f5f5;
+            --table-border: #ddd;
+            --highlight-bg: rgba(26, 115, 232, 0.12);
+            --search-highlight: #FFEB3B;
+            --search-active: #FF9800;
+        }
+
+        body.theme-dark {
+            --bg: #1a1a1a;
+            --text: #e0e0e0;
+            --text-secondary: #999;
+            --border: #444;
+            --code-bg: #2d2d2d;
+            --blockquote-bg: #1a2744;
+            --blockquote-border: #8AB4F8;
+            --blockquote-text: #ccc;
+            --table-th-bg: #2d2d2d;
+            --table-border: #444;
+        }
+
+        body.theme-sepia {
+            --bg: #f4ecd8;
+            --text: #5b4636;
+            --text-secondary: #8b7355;
+            --border: #d4c5a9;
+            --code-bg: #e8dcc8;
+            --blockquote-bg: #ede0c8;
+            --blockquote-border: #b8956a;
+            --blockquote-text: #6b5b4f;
+            --table-th-bg: #e8dcc8;
+            --table-border: #d4c5a9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text);
+            background: var(--bg);
+            padding: 16px 20px;
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        h1 { font-size: 1.8em; margin: 1em 0 0.5em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; }
+        h2 { font-size: 1.5em; margin: 0.8em 0 0.4em; }
+        h3 { font-size: 1.25em; margin: 0.6em 0 0.3em; }
+        h4, h5, h6 { font-size: 1.1em; margin: 0.5em 0 0.2em; }
+
+        pre {
+            background: var(--code-bg);
+            border-radius: 8px;
+            padding: 12px 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 12px 0;
+        }
+        code { font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 0.9em; }
+        :not(pre) > code {
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 12px 0;
+            overflow-x: auto;
+            display: block;
+            -webkit-overflow-scrolling: touch;
+        }
+        th, td { border: 1px solid var(--table-border); padding: 8px 12px; text-align: left; }
+        th { background: var(--table-th-bg); font-weight: 600; }
+
+        blockquote {
+            border-left: 4px solid var(--blockquote-border);
+            padding: 8px 16px;
+            margin: 12px 0;
+            background: var(--blockquote-bg);
+            color: var(--blockquote-text);
+        }
+
+        ul, ol { padding-left: 1.5em; margin: 8px 0; }
+        img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+
+        .mermaid { width: 100%; overflow-x: auto; margin: 16px 0; text-align: center; }
+        .mermaid svg { max-width: 100%; height: auto; }
+        .katex-display { overflow-x: auto; overflow-y: hidden; }
+
+        /* 用户高亮标记 */
+        .user-highlight { background: #FFE082 !important; color: inherit !important; border-radius: 2px !important; padding: 0 2px !important; }
+
+        /* 搜索高亮 */
+        .search-match { background: #FFEB3B; border-radius: 2px; }
+        .search-match-active { background: #FF9800; border-radius: 2px; font-weight: bold; }
+    </style>
+</head>
+<body class="theme-light">
+    <div id="content">
+        <p style="color:var(--text-secondary);text-align:center;">📄 加载中...</p>
+    </div>
+
+    <!-- 内嵌 Markdown 数据 (base64) — 由 Kotlin 注入 -->
+    <script id="md-data" type="text/plain">__MD_BASE64__</script>
+
+    <script>
+        // ===== 初始化 marked.js =====
+        marked.setOptions({ breaks: true, gfm: true });
+
+        // ===== 初始化 Mermaid =====
+        mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+
+        // ===== 核心渲染 =====
+        function renderMarkdown(rawMd) {
+            try {
+                const mermaidBlocks = [];
+                const preprocessed = rawMd.replace(
+                    /```mermaid\n([\s\S]*?)```/g,
+                    (match, code) => {
+                        const id = 'mermaid-' + mermaidBlocks.length;
+                        mermaidBlocks.push({ id, code });
+                        return `<div class="mermaid" id="${id}">${code}</div>`;
+                    }
+                );
+
+                const html = marked.parse(preprocessed);
+                document.getElementById('content').innerHTML = html;
+
+                renderMathInElement(document.getElementById('content'), {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$',  right: '$',  display: false },
+                    ],
+                    throwOnError: false,
+                    strict: false,
+                });
+
+                if (mermaidBlocks.length > 0) {
+                    requestAnimationFrame(() => {
+                        mermaidBlocks.forEach(({ id }) => {
+                            const el = document.getElementById(id);
+                            if (el && el.textContent && el.textContent.trim()) {
+                                try {
+                                    const uniqueId = id + '-' + Date.now();
+                                    mermaid.render(uniqueId, el.textContent.trim())
+                                        .then(result => { el.innerHTML = result.svg; })
+                                        .catch(e => {
+                                            el.innerHTML = '<pre style="color:red;">Mermaid Error: ' + e.message + '</pre>';
+                                        });
+                                } catch (e) {
+                                    el.innerHTML = '<pre style="color:red;">Mermaid Error: ' + e.message + '</pre>';
+                                }
+                            }
+                        });
+                    });
+                }
+            } catch (e) {
+                document.getElementById('content').innerHTML =
+                    `<pre style="color:red;">渲染错误: ${e.message}</pre>`;
+            }
+        }
+
+        // base64 解码后调用 renderMarkdown
+        // 用 decodeURIComponent 替代 TextDecoder，兼容性更好
+        function renderMarkdownBase64(b64) {
+            try {
+                var binary = atob(b64);
+                var uriParts = [];
+                for (var i = 0; i < binary.length; i++) {
+                    var hex = binary.charCodeAt(i).toString(16);
+                    uriParts.push('%' + (hex.length === 1 ? '0' : '') + hex);
+                }
+                var decoded = decodeURIComponent(uriParts.join(''));
+                renderMarkdown(decoded);
+            } catch (e) {
+                document.getElementById('content').innerHTML =
+                    '<pre style="color:red;">解码错误: ' + e.message + '</pre>';
+            }
+        }
+
+        // 页面加载完成后自动渲染嵌入的 Markdown
+        window.addEventListener('DOMContentLoaded', function() {
+            var el = document.getElementById('md-data');
+            if (el && el.textContent && el.textContent.trim() !== '__MD_BASE64__') {
+                renderMarkdownBase64(el.textContent.trim());
+            }
+        });
+
+        // ===== 主题切换 =====
+        function setTheme(theme) {
+            document.body.className = 'theme-' + theme;
+        }
+
+        // ===== 大纲导航 =====
+        function scrollToHeading(headingText) {
+            const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            for (const h of headings) {
+                if (h.textContent.trim() === headingText) {
+                    h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    return;
+                }
+            }
+        }
+
+        // ===== 字体 =====
+        function setFontSize(sizePx) {
+            document.body.style.fontSize = sizePx + 'px';
+            const codeBlocks = document.querySelectorAll('pre code');
+            codeBlocks.forEach(el => el.style.fontSize = (sizePx * 0.9) + 'px');
+        }
+
+        // ===== 翻页 =====
+        function scrollPage(direction) {
+            const amount = window.innerHeight * 0.85;
+            window.scrollBy({
+                top: direction === 'down' ? amount : -amount,
+                behavior: 'smooth',
+            });
+        }
+
+        // ===== TTS 高亮 =====
+        let ttsCurrentHighlight = null;
+
+        function highlightParagraph(index) {
+            clearHighlight();
+            const content = document.getElementById('content');
+            if (!content) return;
+            const blocks = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+            if (index >= 0 && index < blocks.length) {
+                const el = blocks[index];
+                el.style.transition = 'background-color 0.3s';
+                el.style.backgroundColor = 'rgba(26, 115, 232, 0.15)';
+                el.style.borderRadius = '4px';
+                el.style.padding = '4px 8px';
+                el.style.margin = '2px -4px';
+                ttsCurrentHighlight = el;
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function clearHighlight() {
+            if (ttsCurrentHighlight) {
+                ttsCurrentHighlight.style.backgroundColor = '';
+                ttsCurrentHighlight.style.borderRadius = '';
+                ttsCurrentHighlight.style.padding = '';
+                ttsCurrentHighlight.style.margin = '';
+                ttsCurrentHighlight = null;
+            }
+        }
+
+        // ===== 段落提取 =====
+        function getParagraphsText() {
+            const content = document.getElementById('content');
+            if (!content) return '[]';
+            const blocks = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+            const texts = [];
+            blocks.forEach(el => {
+                const t = el.textContent.trim();
+                if (t) texts.push(t);
+            });
+            return JSON.stringify(texts);
+        }
+
+        // ===== 文档内搜索（跨节点版） =====
+        let searchMatches = [];
+        let searchCurrentIdx = -1;
+
+        function findText(query) {
+            clearSearchHighlights();
+            searchMatches = [];
+            searchCurrentIdx = -1;
+            if (!query) return '0';
+
+            const content = document.getElementById('content');
+            if (!content) return '0';
+
+            // Step 1: 收集所有文本节点
+            const textNodes = [];
+            const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+                acceptNode: function(node) {
+                    if (!node.parentElement) return NodeFilter.FILTER_REJECT;
+                    var tag = node.parentElement.tagName;
+                    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'SVG' || tag === 'MATH' || tag === 'NOSCRIPT')
+                        return NodeFilter.FILTER_REJECT;
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            });
+            while (walker.nextNode()) {
+                if (walker.currentNode.textContent.trim()) textNodes.push(walker.currentNode);
+            }
+            if (textNodes.length === 0) return '0';
+
+            // Step 2: 拼接全文 + 偏移映射
+            var fullText = '', offsets = [];
+            for (var i = 0; i < textNodes.length; i++) {
+                offsets.push(fullText.length);
+                fullText += textNodes[i].textContent;
+            }
+
+            // Step 3: 在全文搜索
+            var regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+            var allMatches = [...fullText.matchAll(regex)];
+            if (allMatches.length === 0) { console.log('[Search] 0 matches in full text'); return '0'; }
+
+            // Step 4: 从后往前高亮（避免偏移漂移）
+            for (var m = allMatches.length - 1; m >= 0; m--) {
+                var ms = allMatches[m].index, me = ms + allMatches[m][0].length;
+                highlightTextRange(textNodes, offsets, ms, me);
+            }
+            // 反转 searchMatches 恢复正向顺序（倒序插入导致颠倒）
+            searchMatches.reverse();
+
+            console.log('[Search] found ' + allMatches.length + ' matches');
+            return allMatches.length.toString();
+        }
+
+        // 在文本节点数组中高亮 [start, end) 范围
+        function highlightTextRange(textNodes, offsets, start, end) {
+            for (var i = 0; i < textNodes.length; i++) {
+                var nodeStart = offsets[i];
+                var nodeEnd = nodeStart + textNodes[i].textContent.length;
+                if (end <= nodeStart) break; // 已过匹配范围
+                if (start >= nodeEnd) continue; // 还没到
+
+                var localStart = Math.max(0, start - nodeStart);
+                var localEnd = Math.min(textNodes[i].textContent.length, end - nodeStart);
+                if (localStart >= localEnd) continue;
+
+                var node = textNodes[i];
+                var text = node.textContent;
+                var frag = document.createDocumentFragment();
+                if (localStart > 0) frag.appendChild(document.createTextNode(text.slice(0, localStart)));
+                var span = document.createElement('span');
+                span.className = 'search-match';
+                span.textContent = text.slice(localStart, localEnd);
+                span.dataset.matchIndex = searchMatches.length;
+                frag.appendChild(span);
+                searchMatches.push(span);
+                if (localEnd < text.length) frag.appendChild(document.createTextNode(text.slice(localEnd)));
+                node.parentNode.replaceChild(frag, node);
+                textNodes[i] = span.childNodes[0]; // 更新引用（未匹配部分）
+            }
+        }
+
+        function highlightSearchMatch(index) {
+            if (searchCurrentIdx >= 0 && searchCurrentIdx < searchMatches.length) {
+                searchMatches[searchCurrentIdx].className = 'search-match';
+            }
+            if (index >= 0 && index < searchMatches.length) {
+                searchCurrentIdx = index;
+                searchMatches[index].className = 'search-match-active';
+                searchMatches[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return (index + 1) + '/' + searchMatches.length;
+            }
+            return '0';
+        }
+
+        function nextSearchMatch() {
+            const next = (searchCurrentIdx + 1) % searchMatches.length;
+            return highlightSearchMatch(next);
+        }
+
+        function prevSearchMatch() {
+            const prev = searchCurrentIdx <= 0 ? searchMatches.length - 1 : searchCurrentIdx - 1;
+            return highlightSearchMatch(prev);
+        }
+
+        function clearSearchHighlights() {
+            document.querySelectorAll('.search-match, .search-match-active').forEach(span => {
+                const parent = span.parentNode;
+                if (parent) {
+                    parent.replaceChild(document.createTextNode(span.textContent), span);
+                    parent.normalize();
+                }
+            });
+            searchMatches = [];
+            searchCurrentIdx = -1;
+        }
+
+        // ===== 滚动位置保存/恢复 =====
+        function getScrollPosition() {
+            return Math.round(window.scrollY).toString();
+        }
+
+        function setScrollPosition(y) {
+            window.scrollTo({ top: parseInt(y) || 0, behavior: 'instant' });
+        }
+
+        // ===== 书签段落索引 =====
+        function getCurrentParagraphIndex() {
+            const content = document.getElementById('content');
+            if (!content) return '0';
+            const blocks = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+            // 取视口中心的元素
+            const cx = window.innerWidth / 2;
+            const cy = window.innerHeight / 3; // 上方 1/3 处更准
+            const el = document.elementFromPoint(cx, cy);
+            if (!el) return '0';
+            // 向上查找属于 content 子块的元素
+            let target = el;
+            while (target && target !== content) {
+                for (let i = 0; i < blocks.length; i++) {
+                    if (blocks[i] === target || blocks[i].contains(target)) {
+                        return i.toString();
+                    }
+                }
+                target = target.parentElement;
+            }
+            return '0';
+        }
+        function getParagraphAt(index) {
+            const content = document.getElementById('content');
+            if (!content) return '';
+            const blocks = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+            if (index >= 0 && index < blocks.length) {
+                return blocks[index].textContent.trim().substring(0, 80);
+            }
+            return '';
+        }
+
+        function scrollToParagraph(index) {
+            const content = document.getElementById('content');
+            if (!content) return;
+            const blocks = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+            if (index >= 0 && index < blocks.length) {
+                blocks[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // 书签跳转：先高亮再滚动，1s 后消退
+        function highlightAndScroll(index) {
+            clearHighlight();
+            const content = document.getElementById('content');
+            if (!content) return;
+            const blocks = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+            if (index >= 0 && index < blocks.length) {
+                const el = blocks[index];
+                el.style.transition = 'background-color 0.3s';
+                el.style.backgroundColor = 'rgba(26, 115, 232, 0.15)';
+                el.style.borderRadius = '4px';
+                el.style.padding = '4px 8px';
+                el.style.margin = '2px -4px';
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                    el.style.backgroundColor = '';
+                    el.style.borderRadius = '';
+                    el.style.padding = '';
+                    el.style.margin = '';
+                }, 1500);
+            }
+        }
+
+        // ===== 文字选中 → 高亮标记 =====
+
+        // 获取当前选中区域的段落索引和偏移
+        function getSelectionInfo() {
+            var s = window.getSelection();
+            if (!s || s.isCollapsed) return JSON.stringify({text:'',paraIdx:-1,startOffset:-1,endOffset:-1});
+            var text = s.toString().trim();
+            if (!text) return JSON.stringify({text:'',paraIdx:-1,startOffset:-1,endOffset:-1});
+            var all = document.getElementById('content').querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+            var range = s.getRangeAt(0);
+            var startNode = range.startContainer;
+            var endNode = range.endContainer;
+            var startParaIdx = -1, startOffset = range.startOffset;
+            var endParaIdx = -1, endOffset = range.endOffset;
+
+            for (var i = 0; i < all.length; i++) {
+                if (all[i].contains(startNode)) {
+                    startParaIdx = i;
+                    var walker = document.createTreeWalker(all[i], NodeFilter.SHOW_TEXT);
+                    var charCount = 0, found = false;
+                    while (walker.nextNode() && !found) {
+                        if (walker.currentNode === startNode) {
+                            startOffset = charCount + range.startOffset;
+                            found = true;
+                        } else charCount += walker.currentNode.textContent.length;
+                    }
+                }
+                if (all[i].contains(endNode)) {
+                    endParaIdx = i;
+                    var walker = document.createTreeWalker(all[i], NodeFilter.SHOW_TEXT);
+                    var charCount = 0, found = false;
+                    while (walker.nextNode() && !found) {
+                        if (walker.currentNode === endNode) {
+                            endOffset = charCount + range.endOffset;
+                            found = true;
+                        } else charCount += walker.currentNode.textContent.length;
+                    }
+                }
+            }
+            return JSON.stringify({text:text, paraIdx:startParaIdx, startOffset:startOffset, endOffset:endOffset});
+        }
+
+        // 对指定段落中的指定范围应用高亮颜色
+        function applyHighlight(paraIdx, startOffset, endOffset, color) {
+            try {
+                var all = document.getElementById('content').querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+                if (paraIdx < 0 || paraIdx >= all.length) return;
+                var el = all[paraIdx];
+                var text = el.textContent;
+                if (startOffset < 0 || endOffset > text.length || startOffset >= endOffset) return;
+                // 遍历文本节点找起止位置
+                var textNodes = [];
+                var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                var charCount = 0;
+                while (walker.nextNode()) {
+                    var node = walker.currentNode;
+                    textNodes.push({node:node, start:charCount, end:charCount + node.textContent.length});
+                    charCount += node.textContent.length;
+                }
+                var startTN = null, startOff = 0, endTN = null, endOff = 0;
+                for (var i = 0; i < textNodes.length; i++) {
+                    var tn = textNodes[i];
+                    if (!startTN && tn.start <= startOffset && tn.end > startOffset) { startTN = tn.node; startOff = startOffset - tn.start; }
+                    if (tn.start < endOffset && tn.end >= endOffset) { endTN = tn.node; endOff = endOffset - tn.start; }
+                }
+                if (!startTN || !endTN) return;
+                // 包裹 span
+                var range = document.createRange();
+                range.setStart(startTN, startOff);
+                range.setEnd(endTN, endOff);
+                var frag = range.extractContents();
+                var span = document.createElement('span');
+                span.className = 'user-highlight';
+                span.style.setProperty('background-color', color, 'important');
+                span.setAttribute('data-hl-start', String(startOffset));
+                span.setAttribute('data-hl-end', String(endOffset));
+                span.setAttribute('data-hl-para', String(paraIdx));
+                span.appendChild(frag);
+                range.insertNode(span);
+            } catch(e) { console.log('HL err: ' + e.message); }
+        }
+
+        // 根据偏移移除高亮
+        function removeHighlight(paraIdx, startOffset, endOffset) {
+            var all = document.getElementById('content').querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
+            if (paraIdx < 0 || paraIdx >= all.length) return;
+            var el = all[paraIdx];
+            var spans = el.querySelectorAll('span.user-highlight');
+            for (var i = 0; i < spans.length; i++) {
+                var sp = spans[i];
+                if (parseInt(sp.getAttribute('data-hl-start')) === startOffset &&
+                    parseInt(sp.getAttribute('data-hl-end')) === endOffset) {
+                    while (sp.firstChild) sp.parentNode.insertBefore(sp.firstChild, sp);
+                    sp.parentNode.removeChild(sp);
+                    sp.parentNode.normalize();
+                    return;
+                }
+            }
+        }
+
+        // 批量渲染保存的高亮
+        function applyAllHighlights(jsonArr) {
+            try {
+                var highlights = JSON.parse(jsonArr);
+                for (var i = 0; i < highlights.length; i++) {
+                    var h = highlights[i];
+                    applyHighlight(h.paraIdx, h.startOffset, h.endOffset, '#FFE082');
+                }
+            } catch(e) { console.log('applyAllHighlights err: ' + e.message); }
+        }
+
+        // 清除所有用户高亮并重渲染
+        function clearAndReapplyHighlights(jsonArr) {
+            document.querySelectorAll('span.user-highlight').forEach(function(sp) {
+                while (sp.firstChild) sp.parentNode.insertBefore(sp.firstChild, sp);
+                sp.parentNode.removeChild(sp);
+                sp.parentNode.normalize();
+            });
+            applyAllHighlights(jsonArr);
+        }
+
+        // ===== 选中监听 → 通知 Kotlin =====
+        document.addEventListener('selectionchange', function() {
+            clearTimeout(window._selTimer);
+            window._selTimer = setTimeout(function() {
+                var s = window.getSelection();
+                if (s && !s.isCollapsed && s.toString().trim()) {
+                    var info = getSelectionInfo();
+                    try { Android.onSelectionChanged(info); } catch(e) {}
+                }
+            }, 800);
+        });
+        document.addEventListener('touchstart', function(e) {
+            var s = window.getSelection();
+            if (s && !s.isCollapsed) s.removeAllRanges();
+        });
+    </script>
+</body>
+</html>
