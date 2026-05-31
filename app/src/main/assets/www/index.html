@@ -16,6 +16,22 @@
     <!-- Mermaid -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 
+    <!-- CodeMirror 6 (ESM, 按需加载) -->
+    <script type="module">
+        // 全局暴露 CM6 加载器
+        window._cm6Ready = false;
+        window._cm6Promise = (async () => {
+            const [{EditorView, basicSetup}, {markdown}] = await Promise.all([
+                import('https://esm.sh/codemirror@6.0.1'),
+                import('https://esm.sh/@codemirror/lang-markdown@6.5.0')
+            ]);
+            window._EditorView = EditorView;
+            window._basicSetup = basicSetup;
+            window._markdown = markdown;
+            window._cm6Ready = true;
+        })();
+    </script>
+
     <style>
         :root {
             --bg: #ffffff;
@@ -61,26 +77,59 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { -webkit-text-size-adjust: 100%; }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
             font-size: 16px;
             line-height: 1.8;
             color: var(--text);
             background: var(--bg);
-            padding: 16px 20px;
-            max-width: 100%;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
             transition: background 0.3s, color 0.3s;
         }
 
-        h1 { font-size: 1.8em; margin: 1em 0 0.5em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; }
-        h2 { font-size: 1.5em; margin: 0.8em 0 0.4em; }
-        h3 { font-size: 1.25em; margin: 0.6em 0 0.3em; }
-        h4, h5, h6 { font-size: 1.1em; margin: 0.5em 0 0.2em; }
+        /* ===== 双面板容器 ===== */
+        #read-panel {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            overflow-y: auto;
+            padding: 16px 20px;
+        }
+        #edit-panel {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none;
+            overflow: hidden;
+        }
+        body.edit-mode #read-panel { display: none; }
+        body.edit-mode #edit-panel { display: flex; flex-direction: column; }
+        body.edit-mode { padding: 0; }  /* 编辑模式去掉 body padding */
 
-        pre {
+        /* ===== CodeMirror 6 容器 ===== */
+        #cm-editor { flex: 1; overflow: hidden; }
+        #cm-editor .cm-editor { height: 100%; }
+        #cm-editor .cm-editor .cm-scroller { overflow: auto; }
+        #cm-editor .cm-editor .cm-content { font-size: 15px; line-height: 1.6; padding: 12px 16px; font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace; }
+        #cm-editor .cm-editor .cm-gutters { font-size: 13px; }
+
+        /* CM6 主题跟随 */
+        body.theme-light #cm-editor .cm-editor { background: #fff; color: #1a1a1a; }
+        body.theme-light #cm-editor .cm-editor .cm-gutters { background: #fafafa; color: #999; border-right: 1px solid #e0e0e0; }
+        body.theme-light #cm-editor .cm-editor .cm-activeLineGutter { background: #f0f0f0; }
+
+        body.theme-dark #cm-editor .cm-editor { background: #1e1e1e; color: #d4d4d4; }
+        body.theme-dark #cm-editor .cm-editor .cm-gutters { background: #252526; color: #858585; border-right: 1px solid #333; }
+        body.theme-dark #cm-editor .cm-editor .cm-activeLineGutter { background: #2a2d2e; }
+
+        body.theme-sepia #cm-editor .cm-editor { background: #f4ecd8; color: #5b4636; }
+        body.theme-sepia #cm-editor .cm-editor .cm-gutters { background: #ede0c8; color: #8b7355; border-right: 1px solid #d4c5a9; }
+        body.theme-sepia #cm-editor .cm-editor .cm-activeLineGutter { background: #e8dcc8; }
+
+        /* ===== 阅读面板样式（保持原样） ===== */
+        #read-panel h1 { font-size: 1.8em; margin: 1em 0 0.5em; border-bottom: 2px solid var(--border); padding-bottom: 0.3em; }
+        #read-panel h2 { font-size: 1.5em; margin: 0.8em 0 0.4em; }
+        #read-panel h3 { font-size: 1.25em; margin: 0.6em 0 0.3em; }
+        #read-panel h4, #read-panel h5, #read-panel h6 { font-size: 1.1em; margin: 0.5em 0 0.2em; }
+
+        #read-panel pre {
             background: var(--code-bg);
             border-radius: 8px;
             padding: 12px 16px;
@@ -90,14 +139,14 @@
             line-height: 1.5;
             margin: 12px 0;
         }
-        code { font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 0.9em; }
-        :not(pre) > code {
+        #read-panel code { font-family: "JetBrains Mono", "Fira Code", monospace; font-size: 0.9em; }
+        #read-panel :not(pre) > code {
             background: var(--code-bg);
             padding: 2px 6px;
             border-radius: 4px;
         }
 
-        table {
+        #read-panel table {
             border-collapse: collapse;
             width: 100%;
             margin: 12px 0;
@@ -105,10 +154,10 @@
             display: block;
             -webkit-overflow-scrolling: touch;
         }
-        th, td { border: 1px solid var(--table-border); padding: 8px 12px; text-align: left; }
-        th { background: var(--table-th-bg); font-weight: 600; }
+        #read-panel th, #read-panel td { border: 1px solid var(--table-border); padding: 8px 12px; text-align: left; }
+        #read-panel th { background: var(--table-th-bg); font-weight: 600; }
 
-        blockquote {
+        #read-panel blockquote {
             border-left: 4px solid var(--blockquote-border);
             padding: 8px 16px;
             margin: 12px 0;
@@ -116,8 +165,8 @@
             color: var(--blockquote-text);
         }
 
-        ul, ol { padding-left: 1.5em; margin: 8px 0; }
-        img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
+        #read-panel ul, #read-panel ol { padding-left: 1.5em; margin: 8px 0; }
+        #read-panel img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; }
 
         .mermaid { width: 100%; overflow-x: auto; margin: 16px 0; text-align: center; }
         .mermaid svg { max-width: 100%; height: auto; }
@@ -132,11 +181,20 @@
     </style>
 </head>
 <body class="theme-light">
-    <div id="content">
-        <p style="color:var(--text-secondary);text-align:center;">📄 加载中...</p>
+
+    <!-- ===== 阅读面板 ===== -->
+    <div id="read-panel">
+        <div id="content">
+            <p style="color:var(--text-secondary);text-align:center;">📄 加载中...</p>
+        </div>
     </div>
 
-    <!-- 内嵌 Markdown 数据 (base64) — 由 Kotlin 注入 -->
+    <!-- ===== 编辑面板 ===== -->
+    <div id="edit-panel">
+        <div id="cm-editor"></div>
+    </div>
+
+    <!-- 内嵌 Markdown 数据 (base64) -->
     <script id="md-data" type="text/plain">__MD_BASE64__</script>
 
     <script>
@@ -146,8 +204,68 @@
         // ===== 初始化 Mermaid =====
         mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
 
-        // ===== 核心渲染 =====
-        function renderMarkdown(rawMd) {
+        // ===== CM6 编辑器实例（懒加载） =====
+        let cmView = null;
+        let currentMdContent = '';  // 当前 Markdown 源内容
+
+        async function ensureCm6() {
+            if (cmView) return cmView;
+            await window._cm6Promise;
+            const { _EditorView: EditorView, _basicSetup: basicSetup, _markdown: markdown } = window;
+            cmView = new EditorView({
+                doc: currentMdContent,
+                extensions: [basicSetup, markdown(), EditorView.lineWrapping],
+                parent: document.getElementById('cm-editor'),
+            });
+            return cmView;
+        }
+
+        function getEditorContent() {
+            if (cmView) return cmView.state.doc.toString();
+            return currentMdContent;
+        }
+
+        function setEditorContent(text) {
+            currentMdContent = text;
+            if (cmView) {
+                cmView.dispatch({
+                    changes: { from: 0, to: cmView.state.doc.length, insert: text }
+                });
+            }
+        }
+
+        // ===== 模式切换 =====
+        function switchToEdit() {
+            if (document.body.classList.contains('edit-mode')) return;
+            currentMdContent = currentMdContent || '';
+            document.body.classList.add('edit-mode');
+            ensureCm6().then(() => {
+                if (cmView.state.doc.toString() !== currentMdContent) {
+                    setEditorContent(currentMdContent);
+                }
+                cmView.focus();
+            });
+        }
+
+        function switchToRead(saveChanges) {
+            if (!document.body.classList.contains('edit-mode')) return;
+            if (saveChanges !== false && cmView) {
+                currentMdContent = cmView.state.doc.toString();
+            }
+            document.body.classList.remove('edit-mode');
+            if (currentMdContent) {
+                renderMarkdownDirect(currentMdContent);
+            }
+        }
+
+        function isEditMode() {
+            return document.body.classList.contains('edit-mode');
+        }
+
+        // ===== 核心渲染（不解码 base64，直接接收内容） =====
+        function renderMarkdownDirect(rawMd) {
+            currentMdContent = rawMd;
+            console.log('[墨笺] renderMarkdownDirect 被调用, 内容长度: ' + (rawMd ? rawMd.length : 0));
             try {
                 const mermaidBlocks = [];
                 const preprocessed = rawMd.replace(
@@ -161,6 +279,7 @@
 
                 const html = marked.parse(preprocessed);
                 document.getElementById('content').innerHTML = html;
+                console.log('[墨笺] 渲染完成, HTML长度: ' + html.length + ', #content子节点: ' + document.getElementById('content').children.length);
 
                 renderMathInElement(document.getElementById('content'), {
                     delimiters: [
@@ -190,15 +309,58 @@
                         });
                     });
                 }
+
+                // 如果当前是编辑模式，切换回阅读模式
+                if (document.body.classList.contains('edit-mode')) {
+                    document.body.classList.remove('edit-mode');
+                }
+
+                // 布局诊断（延迟等 KaTeX 渲染完成）
+                setTimeout(dumpLayout, 500);
             } catch (e) {
                 document.getElementById('content').innerHTML =
                     `<pre style="color:red;">渲染错误: ${e.message}</pre>`;
             }
         }
 
-        // base64 解码后调用 renderMarkdown
-        // 用 decodeURIComponent 替代 TextDecoder，兼容性更好
+        // ===== 布局诊断 =====
+        function dumpLayout() {
+            var h = document.documentElement;
+            var b = document.body;
+            var rp = document.getElementById('read-panel');
+            var ct = document.getElementById('content');
+            var bs = window.getComputedStyle(b);
+            var rs = rp ? window.getComputedStyle(rp) : null;
+            console.log('[布局诊断] === 开始 ===');
+            console.log('[布局] window: ' + window.innerWidth + 'x' + window.innerHeight);
+            console.log('[布局] html: clientH=' + h.clientHeight + ' scrollH=' + h.scrollHeight + ' offsetH=' + h.offsetHeight);
+            console.log('[布局] body: clientH=' + b.clientHeight + ' scrollH=' + b.scrollHeight + ' offsetH=' + b.offsetHeight);
+            console.log('[布局] body computed: height=' + bs.height + ' display=' + bs.display + ' flexDirection=' + bs.flexDirection + ' overflow=' + bs.overflow);
+            if (rp) {
+                console.log('[布局] #read-panel: clientH=' + rp.clientHeight + ' scrollH=' + rp.scrollHeight + ' offsetH=' + rp.offsetHeight);
+                console.log('[布局] #read-panel computed: height=' + rs.height + ' flex=' + rs.flex + ' overflow=' + rs.overflow + ' minHeight=' + rs.minHeight + ' display=' + rs.display);
+            }
+            if (ct) {
+                console.log('[布局] #content: clientH=' + ct.clientHeight + ' scrollH=' + ct.scrollHeight + ' offsetH=' + ct.offsetHeight);
+            }
+            console.log('[布局] body.classList: ' + b.className);
+            var firstP = ct ? ct.querySelector('p') : null;
+            if (firstP) console.log('[布局] #content第一个<p>: text="' + firstP.textContent.substring(0, 40) + '..."');
+            console.log('[布局诊断] === 结束 ===');
+        }
+
+        // ===== 兼容旧接口 =====
+        function renderMarkdown(rawMd) {
+            currentMdContent = rawMd;
+            if (document.body.classList.contains('edit-mode') && cmView) {
+                setEditorContent(rawMd);
+            }
+            renderMarkdownDirect(rawMd);
+        }
+
+        // base64 解码
         function renderMarkdownBase64(b64) {
+            console.log('[墨笺] renderMarkdownBase64 被调用, b64长度: ' + b64.length);
             try {
                 var binary = atob(b64);
                 var uriParts = [];
@@ -222,14 +384,23 @@
             }
         });
 
+        // ===== HTML 内容渲染（非 Markdown） =====
+        function renderHtmlContent(rawHtml) {
+            document.getElementById('content').innerHTML = rawHtml;
+            currentMdContent = rawHtml;
+        }
+
         // ===== 主题切换 =====
         function setTheme(theme) {
-            document.body.className = 'theme-' + theme;
+            document.body.className = document.body.className.replace(/theme-\w+/g, '') + ' theme-' + theme;
+            if (document.body.classList.contains('edit-mode')) {
+                document.body.classList.add('edit-mode');
+            }
         }
 
         // ===== 大纲导航 =====
         function scrollToHeading(headingText) {
-            const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const headings = document.querySelectorAll('#read-panel h1, #read-panel h2, #read-panel h3, #read-panel h4, #read-panel h5, #read-panel h6');
             for (const h of headings) {
                 if (h.textContent.trim() === headingText) {
                     h.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -238,17 +409,21 @@
             }
         }
 
-        // ===== 字体 =====
+        // ===== 字体（仅阅读模式生效） =====
         function setFontSize(sizePx) {
-            document.body.style.fontSize = sizePx + 'px';
-            const codeBlocks = document.querySelectorAll('pre code');
+            document.getElementById('read-panel').style.fontSize = sizePx + 'px';
+            const codeBlocks = document.querySelectorAll('#read-panel pre code');
             codeBlocks.forEach(el => el.style.fontSize = (sizePx * 0.9) + 'px');
         }
 
         // ===== 翻页 =====
         function scrollPage(direction) {
-            const amount = window.innerHeight * 0.85;
-            window.scrollBy({
+            const panel = document.body.classList.contains('edit-mode')
+                ? document.querySelector('#cm-editor .cm-scroller')
+                : document.getElementById('read-panel');
+            if (!panel) return;
+            const amount = (panel.clientHeight || window.innerHeight) * 0.85;
+            panel.scrollBy({
                 top: direction === 'down' ? amount : -amount,
                 behavior: 'smooth',
             });
@@ -310,7 +485,6 @@
             const content = document.getElementById('content');
             if (!content) return '0';
 
-            // Step 1: 收集所有文本节点
             const textNodes = [];
             const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
                 acceptNode: function(node) {
@@ -326,37 +500,32 @@
             }
             if (textNodes.length === 0) return '0';
 
-            // Step 2: 拼接全文 + 偏移映射
             var fullText = '', offsets = [];
             for (var i = 0; i < textNodes.length; i++) {
                 offsets.push(fullText.length);
                 fullText += textNodes[i].textContent;
             }
 
-            // Step 3: 在全文搜索
             var regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
             var allMatches = [...fullText.matchAll(regex)];
             if (allMatches.length === 0) { console.log('[Search] 0 matches in full text'); return '0'; }
 
-            // Step 4: 从后往前高亮（避免偏移漂移）
             for (var m = allMatches.length - 1; m >= 0; m--) {
                 var ms = allMatches[m].index, me = ms + allMatches[m][0].length;
                 highlightTextRange(textNodes, offsets, ms, me);
             }
-            // 反转 searchMatches 恢复正向顺序（倒序插入导致颠倒）
             searchMatches.reverse();
 
             console.log('[Search] found ' + allMatches.length + ' matches');
             return allMatches.length.toString();
         }
 
-        // 在文本节点数组中高亮 [start, end) 范围
         function highlightTextRange(textNodes, offsets, start, end) {
             for (var i = 0; i < textNodes.length; i++) {
                 var nodeStart = offsets[i];
                 var nodeEnd = nodeStart + textNodes[i].textContent.length;
-                if (end <= nodeStart) break; // 已过匹配范围
-                if (start >= nodeEnd) continue; // 还没到
+                if (end <= nodeStart) break;
+                if (start >= nodeEnd) continue;
 
                 var localStart = Math.max(0, start - nodeStart);
                 var localEnd = Math.min(textNodes[i].textContent.length, end - nodeStart);
@@ -374,7 +543,7 @@
                 searchMatches.push(span);
                 if (localEnd < text.length) frag.appendChild(document.createTextNode(text.slice(localEnd)));
                 node.parentNode.replaceChild(frag, node);
-                textNodes[i] = span.childNodes[0]; // 更新引用（未匹配部分）
+                textNodes[i] = span.childNodes[0];
             }
         }
 
@@ -415,11 +584,12 @@
 
         // ===== 滚动位置保存/恢复 =====
         function getScrollPosition() {
-            return Math.round(window.scrollY).toString();
+            return Math.round((document.getElementById('read-panel') || document.body).scrollTop).toString();
         }
 
         function setScrollPosition(y) {
-            window.scrollTo({ top: parseInt(y) || 0, behavior: 'instant' });
+            const panel = document.getElementById('read-panel');
+            if (panel) panel.scrollTo({ top: parseInt(y) || 0, behavior: 'instant' });
         }
 
         // ===== 书签段落索引 =====
@@ -427,12 +597,10 @@
             const content = document.getElementById('content');
             if (!content) return '0';
             const blocks = content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
-            // 取视口中心的元素
             const cx = window.innerWidth / 2;
-            const cy = window.innerHeight / 3; // 上方 1/3 处更准
+            const cy = window.innerHeight / 3;
             const el = document.elementFromPoint(cx, cy);
             if (!el) return '0';
-            // 向上查找属于 content 子块的元素
             let target = el;
             while (target && target !== content) {
                 for (let i = 0; i < blocks.length; i++) {
@@ -444,6 +612,7 @@
             }
             return '0';
         }
+
         function getParagraphAt(index) {
             const content = document.getElementById('content');
             if (!content) return '';
@@ -463,7 +632,6 @@
             }
         }
 
-        // 书签跳转：先高亮再滚动，1s 后消退
         function highlightAndScroll(index) {
             clearHighlight();
             const content = document.getElementById('content');
@@ -487,8 +655,6 @@
         }
 
         // ===== 文字选中 → 高亮标记 =====
-
-        // 获取当前选中区域的段落索引和偏移
         function getSelectionInfo() {
             var s = window.getSelection();
             if (!s || s.isCollapsed) return JSON.stringify({text:'',paraIdx:-1,startOffset:-1,endOffset:-1});
@@ -528,7 +694,6 @@
             return JSON.stringify({text:text, paraIdx:startParaIdx, startOffset:startOffset, endOffset:endOffset});
         }
 
-        // 对指定段落中的指定范围应用高亮颜色
         function applyHighlight(paraIdx, startOffset, endOffset, color) {
             try {
                 var all = document.getElementById('content').querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
@@ -536,7 +701,6 @@
                 var el = all[paraIdx];
                 var text = el.textContent;
                 if (startOffset < 0 || endOffset > text.length || startOffset >= endOffset) return;
-                // 遍历文本节点找起止位置
                 var textNodes = [];
                 var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
                 var charCount = 0;
@@ -552,7 +716,6 @@
                     if (tn.start < endOffset && tn.end >= endOffset) { endTN = tn.node; endOff = endOffset - tn.start; }
                 }
                 if (!startTN || !endTN) return;
-                // 包裹 span
                 var range = document.createRange();
                 range.setStart(startTN, startOff);
                 range.setEnd(endTN, endOff);
@@ -568,7 +731,6 @@
             } catch(e) { console.log('HL err: ' + e.message); }
         }
 
-        // 根据偏移移除高亮
         function removeHighlight(paraIdx, startOffset, endOffset) {
             var all = document.getElementById('content').querySelectorAll('p, h1, h2, h3, h4, h5, h6, pre, blockquote, li');
             if (paraIdx < 0 || paraIdx >= all.length) return;
@@ -586,7 +748,6 @@
             }
         }
 
-        // 批量渲染保存的高亮
         function applyAllHighlights(jsonArr) {
             try {
                 var highlights = JSON.parse(jsonArr);
@@ -597,7 +758,6 @@
             } catch(e) { console.log('applyAllHighlights err: ' + e.message); }
         }
 
-        // 清除所有用户高亮并重渲染
         function clearAndReapplyHighlights(jsonArr) {
             document.querySelectorAll('span.user-highlight').forEach(function(sp) {
                 while (sp.firstChild) sp.parentNode.insertBefore(sp.firstChild, sp);
@@ -622,6 +782,31 @@
             var s = window.getSelection();
             if (s && !s.isCollapsed) s.removeAllRanges();
         });
+
+        // ===== 打印布局切换 =====
+        // 打印前：切回流式布局，让 WebView 看到完整内容高度
+        window._prepareForPrint = function() {
+            console.log('[墨笺] 切换到打印布局');
+            var rp = document.getElementById('read-panel');
+            var ep = document.getElementById('edit-panel');
+            if (rp) { rp.style.position = 'static'; rp.style.overflow = 'visible'; }
+            if (ep) { ep.style.position = 'static'; }
+            document.body.style.overflow = 'visible';
+        };
+        // 打印后：恢复固定定位
+        window._restoreLayout = function() {
+            console.log('[墨笺] 恢复阅读布局');
+            var rp = document.getElementById('read-panel');
+            var ep = document.getElementById('edit-panel');
+            if (rp) { rp.style.position = 'fixed'; rp.style.overflow = 'auto'; }
+            if (ep) { ep.style.position = 'fixed'; }
+            document.body.style.overflow = '';
+        };
+        // 尝试注册标准打印事件（部分 WebView 支持）
+        try {
+            window.addEventListener('beforeprint', window._prepareForPrint);
+            window.addEventListener('afterprint', window._restoreLayout);
+        } catch(e) {}
     </script>
 </body>
 </html>

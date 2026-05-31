@@ -1,6 +1,7 @@
 package com.example.mdreader.ui.components
 
 import android.webkit.WebView
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +39,9 @@ fun ReadingToolbar(
     onThemeChange: (String) -> Unit = {},
     isFullscreen: Boolean = false,
     onToggleFullscreen: () -> Unit = {},
+    isEditMode: Boolean = false,
+    onToggleEdit: () -> Unit = {},
+    onExport: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -52,6 +56,29 @@ fun ReadingToolbar(
                 .padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 编辑模式切换
+            Row(
+                modifier = Modifier
+                    .clickable(onClick = onToggleEdit)
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    if (isEditMode) Icons.Default.Visibility else Icons.Default.Edit,
+                    contentDescription = if (isEditMode) "阅读" else "编辑",
+                    modifier = Modifier.size(20.dp),
+                    tint = if (isEditMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(Modifier.width(2.dp))
+                Text(
+                    if (isEditMode) "阅读" else "编辑",
+                    fontSize = 11.sp,
+                    color = if (isEditMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                )
+            }
+
+            VerticalDivider(modifier = Modifier.height(20.dp).padding(horizontal = 2.dp))
+
             // 主题切换
             IconButton(
                 onClick = {
@@ -147,6 +174,11 @@ fun ReadingToolbar(
             }
 
             VerticalDivider(modifier = Modifier.height(20.dp).padding(horizontal = 2.dp))
+
+            // 导出
+            IconButton(onClick = onExport, modifier = Modifier.size(30.dp)) {
+                Icon(Icons.Default.FileDownload, "导出", Modifier.size(16.dp))
+            }
 
             // 全屏
             IconButton(onClick = onToggleFullscreen, modifier = Modifier.size(30.dp)) {

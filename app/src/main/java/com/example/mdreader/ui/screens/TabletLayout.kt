@@ -45,6 +45,10 @@ fun TabletLayout(
     onThemeChange: (String) -> Unit = {},
     isFullscreen: Boolean = false,
     onToggleFullscreen: () -> Unit = {},
+    isEditMode: Boolean = false,
+    onToggleEdit: () -> Unit = {},
+    onExport: () -> Unit = {},
+    isHtmlFile: Boolean = false,
     onSelectionChanged: ((String) -> Unit)? = null,
 ) {
     val headings = remember(markdownContent) { extractHeadings(markdownContent) }
@@ -78,6 +82,7 @@ fun TabletLayout(
                     onTranslate = onTranslate, onTranslateSettings = onTranslateSettings,
                     currentTheme = currentTheme, onThemeChange = onThemeChange,
                     isFullscreen = isFullscreen, onToggleFullscreen = onToggleFullscreen,
+                    isEditMode = isEditMode, onToggleEdit = onToggleEdit, onExport = onExport,
                 )
             }
         },
@@ -108,6 +113,7 @@ fun TabletLayout(
                 if (isLoading) CircularProgressIndicator(Modifier.align(Alignment.Center))
                 else MarkdownWebView(
                     markdownContent = markdownContent, modifier = Modifier.fillMaxSize(),
+                    isHtmlFile = isHtmlFile,
                     onWebViewReady = { wv -> webView = wv; onWebViewReady?.invoke(wv) },
                     onSelectionChanged = onSelectionChanged,
                 )

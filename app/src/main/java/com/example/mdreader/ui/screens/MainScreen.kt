@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -40,6 +41,12 @@ import com.example.mdreader.data.RecentFilesManager
 import com.example.mdreader.tts.TtsEngine
 import com.example.mdreader.ui.components.DebugLogPanel
 import com.example.mdreader.ui.components.ReadingToolbar
+import com.example.mdreader.ui.components.ExportSheet
+import com.example.mdreader.ui.components.MarkdownWebView
+import com.example.mdreader.ui.components.switchToEdit
+import com.example.mdreader.ui.components.switchToRead
+import com.example.mdreader.ui.components.getRenderedHtml
+import com.example.mdreader.export.ExportService
 import com.example.mdreader.ui.components.SearchBar
 import com.example.mdreader.ui.components.TranslationSettingsDialog
 import com.example.mdreader.translate.TranslationService
@@ -82,6 +89,13 @@ fun MainScreen(modifier: Modifier = Modifier) {
 
     // ---- 全屏 ----
     var isFullscreen by remember { mutableStateOf(false) }
+
+    // ---- 编辑模式 ----
+    var isEditMode by remember { mutableStateOf(false) }
+    var isHtmlFile by remember { mutableStateOf(false) }
+
+    // ---- 导出 ----
+    var showExportSheet by remember { mutableStateOf(false) }
 
     // ---- 选中文字 + 高亮 ----
     var selectedText by remember { mutableStateOf<String?>(null) }
@@ -138,6 +152,9 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 currentFilePath = path
                 currentFileName = name
                 hasOpenedFile = true
+                // HTML 文件检测
+                isHtmlFile = name.endsWith(".html", ignoreCase = true) || name.endsWith(".htm", ignoreCase = true)
+                isEditMode = false  // 打开新文件时回到阅读模式
                 // 拿持久读取权限，避免重开时 SecurityException
                 try {
                     context.contentResolver.takePersistableUriPermission(
@@ -273,6 +290,67 @@ fun MainScreen(modifier: Modifier = Modifier) {
 
     fun toggleFullscreen() { isFullscreen = !isFullscreen }
 
+    fun saveContentBack(filePath: String, content: String) {
+        try {
+            val uri = Uri.parse(filePath)
+            context.contentResolver.openOutputStream(uri, "wt")?.use { out ->
+                out.write(content.toByteArray(Charsets.UTF_8))
+            }
+            DebugLog.i("MainScreen", "文件已保存: $filePath")
+        } catch (e: Exception) {
+            DebugLog.e("MainScreen", "保存失败: ${e.message}")
+        }
+    }
+
+    fun toggleEdit() {
+        if (isEditMode) {
+            // 从编辑切回阅读：保存内容
+            currentWebView?.let { wv ->
+                switchToRead(wv) { updatedContent ->
+                    currentMdContent = updatedContent
+                    isEditMode = false
+                    // 写回文件
+                    val path = currentFilePath
+                    if (path != null && path.isNotEmpty()) {
+                        saveContentBack(path, updatedContent)
+                    }
+                }
+            }
+        } else {
+            // 从阅读切到编辑
+            currentWebView?.let { wv ->
+                switchToEdit(wv)
+                isEditMode = true
+            }
+        }
+    }
+
+    fun showExport() { showExportSheet = true }
+
+    fun handleExportPdf() {
+        currentWebView?.let { wv ->
+            ExportService.exportPdfViaPrint(context, currentFileName, wv)
+        }
+    }
+
+    fun handleExportHtml() {
+        currentWebView?.let { wv ->
+            getRenderedHtml(wv) { html ->
+                ExportService.exportHtml(
+                    context, html, currentFileName,
+                    onComplete = { file ->
+                        DebugLog.i("MainScreen", "HTML 导出成功: ${file.absolutePath}")
+                        Toast.makeText(context, "已导出: ${file.name}", Toast.LENGTH_SHORT).show()
+                    },
+                    onError = { err ->
+                        DebugLog.e("MainScreen", "HTML 导出失败: $err")
+                        Toast.makeText(context, "导出失败: $err", Toast.LENGTH_SHORT).show()
+                    },
+                )
+            }
+        }
+    }
+
     // ---- 书签 ----
     fun addBookmark() {
         val wv = currentWebView ?: return
@@ -336,6 +414,8 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 currentFilePath = path
                 currentFileName = getDisplayName(context, uri) ?: path.substringAfterLast("/")
                 hasOpenedFile = true
+                isHtmlFile = currentFileName.endsWith(".html", ignoreCase = true) || currentFileName.endsWith(".htm", ignoreCase = true)
+                isEditMode = false
                 isLoading = false
                 refreshBookmarks()
                 refreshHighlights()
@@ -399,6 +479,10 @@ fun MainScreen(modifier: Modifier = Modifier) {
                     onThemeChange = { theme = it },
                     isFullscreen = isFullscreen,
                     onToggleFullscreen = { toggleFullscreen() },
+                    isEditMode = isEditMode,
+                    onToggleEdit = { toggleEdit() },
+                    onExport = { showExport() },
+                    isHtmlFile = isHtmlFile,
                     onSelectionChanged = { onTextSelected(it) },
                 )
                 else -> TabletLayout(
@@ -424,6 +508,10 @@ fun MainScreen(modifier: Modifier = Modifier) {
                     onThemeChange = { theme = it },
                     isFullscreen = isFullscreen,
                     onToggleFullscreen = { toggleFullscreen() },
+                    isEditMode = isEditMode,
+                    onToggleEdit = { toggleEdit() },
+                    onExport = { showExport() },
+                    isHtmlFile = isHtmlFile,
                     onSelectionChanged = { onTextSelected(it) },
                 )
                 }
@@ -593,6 +681,15 @@ fun MainScreen(modifier: Modifier = Modifier) {
     // ---- 翻译设置 ----
     if (showTranslateSettings) {
         TranslationSettingsDialog(onDismiss = { showTranslateSettings = false })
+    }
+
+    // ---- 导出弹窗 ----
+    if (showExportSheet) {
+        ExportSheet(
+            onDismiss = { showExportSheet = false },
+            onExportPdf = { handleExportPdf() },
+            onExportHtml = { handleExportHtml() },
+        )
     }
 }
 

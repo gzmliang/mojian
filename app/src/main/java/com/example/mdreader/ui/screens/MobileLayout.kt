@@ -45,6 +45,10 @@ fun MobileLayout(
     onThemeChange: (String) -> Unit = {},
     isFullscreen: Boolean = false,
     onToggleFullscreen: () -> Unit = {},
+    isEditMode: Boolean = false,
+    onToggleEdit: () -> Unit = {},
+    onExport: () -> Unit = {},
+    isHtmlFile: Boolean = false,
     onSelectionChanged: ((String) -> Unit)? = null,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -102,6 +106,7 @@ fun MobileLayout(
                         onTranslate = onTranslate, onTranslateSettings = onTranslateSettings,
                         currentTheme = currentTheme, onThemeChange = onThemeChange,
                         isFullscreen = isFullscreen, onToggleFullscreen = onToggleFullscreen,
+                        isEditMode = isEditMode, onToggleEdit = onToggleEdit, onExport = onExport,
                     )
                 }
             },
@@ -113,6 +118,7 @@ fun MobileLayout(
                 if (isLoading) CircularProgressIndicator(Modifier.align(Alignment.Center))
                 else MarkdownWebView(
                     markdownContent = markdownContent, modifier = Modifier.fillMaxSize(),
+                    isHtmlFile = isHtmlFile,
                     onWebViewReady = { wv -> webView = wv; onWebViewReady?.invoke(wv) },
                     onSelectionChanged = onSelectionChanged,
                 )
