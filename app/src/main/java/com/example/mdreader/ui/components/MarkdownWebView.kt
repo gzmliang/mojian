@@ -2,6 +2,8 @@ package com.example.mdreader.ui.components
 
 import android.annotation.SuppressLint
 import android.util.Base64
+import android.view.MotionEvent
+import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
@@ -92,6 +94,17 @@ fun MarkdownWebView(
                         lastInjected = currentContent  // 标记已注入，防止 update 重复注入
                     }
                 }
+
+                // 阻止父控件拦截触摸事件，让 WebView 获得完整滑动手势
+                setOnTouchListener { _, event ->
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        // 禁止 Compose 父容器拦截触摸 — fling 动量直接给 WebView
+                        (parent as? ViewGroup)?.requestDisallowInterceptTouchEvent(true)
+                    }
+                    false  // 不消费事件，交给 WebView 自己的处理
+                }
+                // 确保超滚动（overscroll）特效启用，提升手感反馈
+                overScrollMode = WebView.OVER_SCROLL_ALWAYS
 
                 onWebViewReady?.invoke(this)
 
