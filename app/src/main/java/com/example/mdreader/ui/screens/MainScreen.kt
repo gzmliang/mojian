@@ -39,7 +39,6 @@ import com.example.mdreader.data.BookmarkManager
 import com.example.mdreader.data.HighlightManager
 import com.example.mdreader.data.RecentFilesManager
 import com.example.mdreader.tts.TtsEngine
-import com.example.mdreader.ui.components.DebugLogPanel
 import com.example.mdreader.ui.components.ReadingToolbar
 import com.example.mdreader.ui.components.ExportSheet
 import com.example.mdreader.ui.components.MarkdownWebView
@@ -446,7 +445,6 @@ fun MainScreen(modifier: Modifier = Modifier) {
                     },
                     onExit = { (context as? android.app.Activity)?.finishAffinity() },
                 )
-                DebugLogPanel()
                 return@Column
             }
 
@@ -522,7 +520,6 @@ fun MainScreen(modifier: Modifier = Modifier) {
                 }
             }
 
-            AnimatedVisibility(visible = !isFullscreen) { DebugLogPanel() }
         }
 
         // ---- 全屏退出浮动按钮 ----
