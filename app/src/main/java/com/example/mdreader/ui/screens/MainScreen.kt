@@ -440,11 +440,6 @@ fun MainScreen(modifier: Modifier = Modifier) {
                     recentFiles = recentFiles,
                     onOpenFile = { filePicker.launch(arrayOf("text/markdown", "text/plain", "*/*")) },
                     onOpenRecent = { openFile(it.path) },
-                    onRemoveRecent = {
-                        RecentFilesManager.removeRecentFile(context, it.path)
-                        recentFiles = RecentFilesManager.getRecentFiles(context)
-                    },
-                    onExit = { (context as? android.app.Activity)?.finishAffinity() },
                 )
                 DebugLogPanel()
                 return@Column
@@ -703,88 +698,54 @@ private fun WelcomeScreen(
     recentFiles: List<RecentFilesManager.RecentFile>,
     onOpenFile: () -> Unit,
     onOpenRecent: (RecentFilesManager.RecentFile) -> Unit,
-    onRemoveRecent: (RecentFilesManager.RecentFile) -> Unit = {},
-    onExit: () -> Unit = {},
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(48.dp))
+
+        // Logo
+        Surface(
+            modifier = Modifier.size(80.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.primaryContainer,
         ) {
-            Spacer(Modifier.height(48.dp))
-
-            // Logo
-            Surface(
-                modifier = Modifier.size(80.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.primaryContainer,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("#", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-            Text("墨笺", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("InkNote — Markdown 阅读器", style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-
-            Spacer(Modifier.height(32.dp))
-
-            // 打开文件
-            Button(onClick = onOpenFile, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.FolderOpen, null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("打开 Markdown 文件")
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // 最近文件
-            if (recentFiles.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("最近阅读", style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.weight(1f))
-                }
-
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    items(recentFiles.take(5), key = { it.path }) { file ->
-                        ListItem(
-                            headlineContent = { Text(file.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                            modifier = Modifier.clickable { onOpenRecent(file) },
-                            leadingContent = { Icon(Icons.Default.Description, null, modifier = Modifier.size(24.dp)) },
-                            trailingContent = {
-                                IconButton(
-                                    onClick = { onRemoveRecent(file) },
-                                    modifier = Modifier.size(28.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "删除",
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                                    )
-                                }
-                            },
-                        )
-                    }
-                }
+            Box(contentAlignment = Alignment.Center) {
+                Text("#", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             }
         }
 
-        // 退出按钮 — 右下角
-        IconButton(
-            onClick = onExit,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).size(40.dp),
-        ) {
-            Icon(
-                Icons.Filled.ExitToApp,
-                contentDescription = "退出应用",
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-            )
+        Spacer(Modifier.height(16.dp))
+        Text("墨笺", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("InkNote — Markdown 阅读器", style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+
+        Spacer(Modifier.height(32.dp))
+
+        // 打开文件
+        Button(onClick = onOpenFile, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.FolderOpen, null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("打开 Markdown 文件")
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // 最近文件
+        if (recentFiles.isNotEmpty()) {
+            Text("最近阅读", style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
+
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(recentFiles.take(5)) { file ->
+                    ListItem(
+                        headlineContent = { Text(file.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        modifier = Modifier.clickable { onOpenRecent(file) },
+                        leadingContent = { Icon(Icons.Default.Description, null, modifier = Modifier.size(24.dp)) },
+                    )
+                }
+            }
         }
     }
 }

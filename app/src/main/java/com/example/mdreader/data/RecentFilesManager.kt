@@ -48,12 +48,6 @@ object RecentFilesManager {
         save(context, trimmed)
     }
 
-    fun removeRecentFile(context: Context, path: String) {
-        val files = getRecentFiles(context).toMutableList()
-        files.removeAll { it.path == path }
-        save(context, files)
-    }
-
     private fun save(context: Context, files: List<RecentFile>) {
         val arr = JSONArray()
         files.forEach { f ->
